@@ -1,15 +1,31 @@
 from __future__ import annotations
 
+import os
 from dataclasses import asdict
 
 import streamlit as st
 
 from app.core.config import get_settings
+from app.core.credential_store import (
+    CredentialStoreError,
+    delete_config,
+    load_config,
+    save_config,
+)
 from app.ingestion.parser import DocumentParseError
 from app.services import KnowledgeService
 from app.storage.repository import KnowledgeRepository
 
 st.set_page_config(page_title="知源 · Knowledge Agent", page_icon="📚", layout="wide")
+
+if not os.getenv("DEEPSEEK_API_KEY"):
+    try:
+        stored_config = load_config()
+    except CredentialStoreError:
+        stored_config = None
+    if stored_config:
+        os.environ["DEEPSEEK_API_KEY"] = stored_config.api_key
+        os.environ["DEEPSEEK_MODEL"] = stored_config.model
 
 
 @st.cache_resource
@@ -31,6 +47,34 @@ st.markdown("""
 with st.sidebar:
     st.header("知识库")
     knowledge_base = st.text_input("知识库名称", "default")
+    with st.expander("DeepSeek API 设置", expanded=not bool(get_settings().llm_api_key)):
+        st.caption("密钥由 Windows DPAPI 加密，仅当前 Windows 用户可以读取。")
+        deepseek_key = st.text_input("API Key", type="password", placeholder="sk-...")
+        deepseek_model = st.selectbox(
+            "模型", ("deepseek-chat", "deepseek-reasoner", "deepseek-flash")
+        )
+        save_column, delete_column = st.columns(2)
+        if save_column.button("保存", use_container_width=True):
+            try:
+                save_config(deepseek_key, deepseek_model)
+                os.environ["DEEPSEEK_API_KEY"] = deepseek_key.strip()
+                os.environ["DEEPSEEK_MODEL"] = deepseek_model
+                get_settings.cache_clear()
+                get_service.clear()
+                st.rerun()
+            except CredentialStoreError as exc:
+                st.error(str(exc))
+        if delete_column.button("删除", use_container_width=True):
+            delete_config()
+            os.environ.pop("DEEPSEEK_API_KEY", None)
+            os.environ.pop("DEEPSEEK_MODEL", None)
+            get_settings.cache_clear()
+            get_service.clear()
+            st.rerun()
+        if get_settings().llm_api_key:
+            st.success("DeepSeek 已配置")
+        else:
+            st.info("未配置时使用本地检索回答。")
     uploaded_files = st.file_uploader("上传资料", type=["pdf", "docx", "txt", "md"], accept_multiple_files=True)
     if st.button("解析并加入知识库", type="primary", disabled=not uploaded_files, use_container_width=True):
         for uploaded in uploaded_files or []:

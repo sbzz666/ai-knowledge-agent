@@ -1,5 +1,5 @@
 #define AppName "Knowledge Agent"
-#define AppVersion "0.1.0"
+#define AppVersion "0.1.1"
 #define AppExe "KnowledgeAgent.exe"
 
 [Setup]
