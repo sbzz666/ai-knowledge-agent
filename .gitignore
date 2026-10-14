@@ -12,4 +12,8 @@ data/uploads/
 data/*.db
 *.sqlite
 *.sqlite3
+build/
+dist/
+release/
+*.spec
 
