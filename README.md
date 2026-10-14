@@ -104,3 +104,9 @@ API 文档位于 `http://127.0.0.1:8000/docs`。
 - `.env`、API Key、真实简历、私有文档、数据库和上传文件不得提交到 Git。
 - 上传文件需要限制类型、大小、页数和解压体积。
 - 模型回答必须保留来源引用；没有足够证据时不编造答案。
+
+## Windows 桌面版
+
+GitHub Releases 提供 `Setup.exe` 安装版和 `Portable.zip` 便携版。便携版解压后运行 `KnowledgeAgent.exe`，不需要另装 Python。知识库、上传文档和 SQLite 数据保存在 Windows 的本地应用数据目录。
+
+安装包不会包含 `.env` 或任何 API 密钥；无密钥时仍可使用离线检索与引用回答。推送 `v*` 标签会触发 GitHub Actions 自动构建发布。
